@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>0.光照立方体</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  attribute vec4 a_color;
+  attribute vec4 a_normal;      // 顶点法向量变量
+  uniform vec3 u_lightColor;    // uniform声明平行光颜色变量
+  uniform vec3 u_lightDirection;// 平行光方向
+  varying vec4 v_color;
+
+  void main() {
+    float radian = radians(30.0);
+    float cos = cos(radian);
+    float sin = sin(radian);
+    mat4 mx = mat4(1,0,0,0,  0,cos,-sin,0,  0,sin,cos,0,  0,0,0,1);
+    mat4 my = mat4(cos,0,-sin,0,  0,1,0,0,  sin,0,cos,0,  0,0,0,1);
+    gl_Position = mx*my*apos;
+
+    // 顶点法向量进行矩阵变换，然后归一化
+    vec3 normal = normalize((mx*my*a_normal).xyz);
+
+    // 计算平行光方向向量和顶点法向量的点积（方向相同为1相反为-1）
+    float dot = max(dot(u_lightDirection, normal), 0.0);
+    // 计算反射后的颜色
+    vec3 reflectedLight = u_lightColor * a_color.rgb * dot;
+
+    // 颜色插值计算
+    v_color = vec4(reflectedLight, a_color.a);
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision lowp float;
+  varying vec4 v_color;
+  void main() {
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    var a_color = gl.getAttribLocation(program, 'a_color');
+    var a_normal = gl.getAttribLocation(program, 'a_normal');
+
+    var u_lightColor = gl.getUniformLocation(program, 'u_lightColor');
+    var u_lightDirection = gl.getUniformLocation(program, 'u_lightDirection');
+
+    // 将平行光颜色RGB(1,1,1)传递到变量中
+    gl.uniform3f(u_lightColor, 1.0, 1.0, 1.0);
+
+    // 光源位置(1,2,3)，保证向量(x,y,z)的长度为1，即单位向量。（向量归一化也可以写在色器中）
+    var x = 1 / Math.sqrt(15), y = 2 / Math.sqrt(15), z = 3 / Math.sqrt(15);
+    gl.uniform3f(u_lightDirection, x, y, -z);
+
+    var data = new Float32Array([
+        .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5, .5,      // 面1
+        .5, .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5,      // 面2
+        .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5,      // 面3
+        -.5, .5, .5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, -.5, -.5, -.5, .5,// 面4
+        -.5, -.5, -.5, .5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, .5,// 面5
+        .5, -.5, -.5, -.5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5 // 面6
+    ]);
+    var colorData = new Float32Array([
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面1
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面2
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面3
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面4
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面5
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0 // 红色——面6
+    ]);
+    // 顶点法向量数组normalData
+    var normalData = new Float32Array([
+        0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,       // z轴正方向——面1
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,       // x轴正方向——面2
+        0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,       // y轴正方向——面3
+        -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, // x轴负方向——面4
+        0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, // y轴负方向——面5
+        0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1  // z轴负方向——面6
+    ]);
+
+    webgl.vertexBuffer(data, aposLocation, 3, gl.FLOAT);
+    webgl.vertexBuffer(colorData, a_color, 3, gl.FLOAT);
+    webgl.vertexBuffer(normalData, a_normal, 3, gl.FLOAT);
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.drawArrays(gl.TRIANGLES, 0, 36);
+</script>
+</body>
+</html>

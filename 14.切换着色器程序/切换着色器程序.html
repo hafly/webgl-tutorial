@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>切换着色器</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color:#0d72da"></canvas>
+
+<!-- 贴图着色器代码 -->
+<script id="vertexShader1" type="x-shader/x-vertex">
+  attribute vec4 a_Position;// 顶点位置坐标
+  attribute vec2 a_TexCoord;// 纹理坐标
+  varying vec2 v_TexCoord;  // 插值后纹理坐标
+
+  // uniform声明旋转矩阵变量mx、m
+  uniform mat4 mx;
+  uniform mat4 my;
+
+  void main() {
+    // 两个旋转矩阵、顶点齐次坐标连乘
+    gl_Position = mx*my*a_Position;
+    // 纹理坐标插值计算
+    v_TexCoord = a_TexCoord;
+  }
+</script>
+
+<script id="fragmentShader1" type="x-shader/x-fragment">
+  precision highp float;
+  // 接收插值后的纹理坐标
+  varying vec2 v_TexCoord;
+  // 纹理图片像素数据
+  uniform sampler2D u_Sampler;
+  void main() {
+    // 采集纹素，逐片元赋值像素值
+    gl_FragColor = texture2D(u_Sampler,v_TexCoord);
+  }
+</script>
+
+<!-- 立方体着色器代码 -->
+<script id="vertexShader2" type="x-shader/x-vertex">
+  attribute vec4 a_Position;
+  attribute vec4 a_color;
+  attribute vec4 a_normal;
+
+  uniform vec3 u_lightColor;
+  uniform vec3 u_lightDirection;
+
+  varying vec4 v_color;
+
+  uniform mat4 mx;//绕x轴旋转矩阵
+  uniform mat4 my;//绕y轴旋转矩阵
+  void main() {
+    gl_Position = mx*my*a_Position;
+    vec3 normal = normalize((mx*my*a_normal).xyz);
+    // 计算平行光方向向量和顶点法向量的点积
+    float dot = max(dot(u_lightDirection, normal), 0.0);
+    // 计算反射后的颜色
+    vec3 reflectedLight = u_lightColor * a_color.rgb * dot;
+    // 颜色插值计算
+    v_color = vec4(reflectedLight, a_color.a);
+  }
+</script>
+
+<script id="fragmentShader2" type="x-shader/x-fragment">
+  precision lowp float;
+  varying vec4 v_color;
+  void main() {
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource1 = document.getElementById('vertexShader1').innerText;
+    var fragShaderSource1 = document.getElementById('fragmentShader1').innerText;
+
+    var vertexShaderSource2 = document.getElementById('vertexShader2').innerText;
+    var fragShaderSource2 = document.getElementById('fragmentShader2').innerText;
+
+    var program1 = webgl.initShader(vertexShaderSource1, fragShaderSource1);
+    var program2 = webgl.initShader(vertexShaderSource2, fragShaderSource2);
+
+    // 着色器1对应的变量地址
+    var texturePosition = gl.getAttribLocation(program1, 'a_Position');
+    var a_TexCoord = gl.getAttribLocation(program1, 'a_TexCoord');
+    var u_Sampler = gl.getUniformLocation(program1, 'u_Sampler');
+    var textureMx = gl.getUniformLocation(program1, 'mx');  // 旋转矩阵mx
+    var textureMy = gl.getUniformLocation(program1, 'my');  // 旋转矩阵my
+
+    // 着色器2对应的变量地址
+    var cubePosition = gl.getAttribLocation(program2, 'a_Position');
+    var a_color = gl.getAttribLocation(program2, 'a_color');
+    var a_normal = gl.getAttribLocation(program2, 'a_normal');
+    var u_lightColor = gl.getUniformLocation(program2, 'u_lightColor');
+    var u_lightDirection = gl.getUniformLocation(program2, 'u_lightDirection');
+    var cubeMx = gl.getUniformLocation(program2, 'mx');
+    var cubeMy = gl.getUniformLocation(program2, 'my');
+
+    /**
+     * 纹理映射、立方体共用的旋转矩阵数据
+     **/
+    var angle = Math.PI / 180 * 30; // 起始角度
+    var sin = Math.sin(angle);  // 旋转角度正弦值
+    var cos = Math.cos(angle);  // 旋转角度余弦值
+    // 绕x轴旋转30度
+    var mxArr = new Float32Array([1, 0, 0, 0, 0, cos, -sin, 0, 0, sin, cos, 0, 0, 0, 0, 1]);
+    // 绕y轴旋转30度
+    var myArr = new Float32Array([cos, 0, -sin, 0, 0, 1, 0, 0, sin, 0, cos, 0, 0, 0, 0, 1]);
+
+    // 立方体顶点位置数据数组
+    var cubeData = new Float32Array([
+        .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5, .5,      // 面1
+        .5, .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5,      // 面2
+        .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5,      // 面3
+        -.5, .5, .5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, -.5, -.5, -.5, .5,// 面4
+        -.5, -.5, -.5, .5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, .5,// 面5
+        .5, -.5, -.5, -.5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5 // 面6
+    ]);
+    // 立方体顶点颜色数组
+    var colorData = new Float32Array([
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面1
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面2
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面3
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面4
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,// 红色——面5
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0 // 红色——面6
+    ]);
+    // 立方体顶点法向量数组
+    var normalData = new Float32Array([
+        0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,       // z轴正方向——面1
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,       // x轴正方向——面2
+        0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,       // y轴正方向——面3
+        -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, // x轴负方向——面4
+        0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, // y轴负方向——面5
+        0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1  // z轴负方向——面6
+    ]);
+
+    // 纹理映射顶点数据
+    var data = new Float32Array([
+        -0.4, 0.2, -0.51,   // 左上角——v0
+        -0.4, -0.2, -0.51,  // 左下角——v1
+        0.4, 0.2, -0.51,    // 右上角——v2
+        0.4, -0.2, -0.51    // 右下角——v3
+    ]);
+    // UV纹理坐标数据
+    var textureData = new Float32Array([
+        0, 1,   // 左上角——uv0
+        0, 0,   // 左下角——uv1
+        1, 1,   // 右上角——uv2
+        1, 0    // 右下角——uv3
+    ]);
+
+    gl.enable(gl.DEPTH_TEST); // 开启深度测试
+
+    // 创建缓冲区textureBuffer，传入图片纹理数据，然后执行绘制方法drawArrays()
+    webgl.textureBuffer('glb.jpg', gl.RGB, function () {
+        /** 开始绘制纹理贴图 **/
+        gl.useProgram(program1);
+
+        // 调用函数vertexBuffer()，配置顶点数据
+        webgl.vertexBuffer(data, texturePosition, 3);
+        webgl.vertexBuffer(textureData, a_TexCoord, 2);
+
+        /** 传入纹理图片旋转矩阵数据 **/
+        gl.uniformMatrix4fv(textureMy, false, myArr);
+        gl.uniformMatrix4fv(textureMx, false, mxArr);
+        gl.uniform1i(u_Sampler, 0); // 纹理缓冲区单元TEXTURE0中的颜色数据传入片元着色器
+
+        // 执行绘制，纹理映射像素值存入颜色缓冲区
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        /** 开始绘制立方体 **/
+        gl.useProgram(program2);
+
+        webgl.vertexBuffer(cubeData, cubePosition, 3);
+        webgl.vertexBuffer(colorData, a_color, 3);
+        webgl.vertexBuffer(normalData, a_normal, 3);
+
+        /** 传入立方体旋转矩阵数据 **/
+        gl.uniformMatrix4fv(cubeMx, false, mxArr);
+        gl.uniformMatrix4fv(cubeMy, false, myArr);
+
+        /** 传入光的颜色和方向数据 **/
+        gl.uniform3f(u_lightColor, 1.0, 1.0, 1.0);
+        // 保证向量(x,y,z)的长度为1，即单位向量
+        var x = 1 / Math.sqrt(15), y = 2 / Math.sqrt(15), z = 3 / Math.sqrt(15);
+        gl.uniform3f(u_lightDirection, x, y, -z);
+
+        // 执行绘制，立方体像素值存入颜色缓冲区
+        gl.drawArrays(gl.TRIANGLES, 0, 36);
+    });
+</script>
+
+</body>
+</html>

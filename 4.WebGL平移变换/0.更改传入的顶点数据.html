@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>0.更改传入的顶点数据</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  void main() {
+    gl_Position = apos;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  void main() {
+    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    // 9个元素构建三个顶点的xyz坐标值
+    var data = new Float32Array([
+        0, 0, 1,
+        0, 1, 0,
+        1, 0, 0
+    ]);
+
+    // 沿着x轴平移0.4:每个顶点的x坐标减少0.4（在CUP中计算）
+    for (let i = 0; i < 9; i += 3) {
+        data[i] += 0.4;
+    }
+
+    webgl.vertexBuffer(data, aposLocation, 3, gl.FLOAT);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>
+
+</body>
+</html>

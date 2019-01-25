@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>0.编写着色器图片转灰度图</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color:#0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 a_Position;// 顶点位置坐标
+  attribute vec2 a_TexCoord;// 纹理坐标
+  varying vec2 v_TexCoord;  // 插值后纹理坐标
+  void main() {
+    gl_Position = a_Position;
+    // 纹理坐标插值计算
+    v_TexCoord = a_TexCoord;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision highp float;
+  // 接收插值后的纹理坐标
+  varying vec2 v_TexCoord;
+  // 纹理图片像素数据
+  uniform sampler2D u_Sampler;
+  void main() {
+    // 采集纹素
+    vec4 texture = texture2D(u_Sampler,v_TexCoord);
+    // 计算RGB三个分量光能量之和，也就是亮度
+    float luminance = 0.299*texture.r+0.587*texture.g+0.114*texture.b;
+    // 逐片元赋值，RGB相同均为亮度值，用黑白两色表达图片的明暗变化
+    gl_FragColor = vec4(luminance,luminance,luminance,1);
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var a_Position = gl.getAttribLocation(program, 'a_Position');
+    var a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
+    var u_Sampler = gl.getUniformLocation(program, 'u_Sampler');
+
+    // 顶点坐标
+    var data = new Float32Array([
+        -0.5, 0.7, // 左上角——v0
+        -0.5, -0.7, // 左下角——v1
+        0.5, 0.7, // 右上角——v2
+        0.5, -0.7  // 右下角——v3
+    ]);
+
+    // 创建UV纹理坐标数据textureData
+    var textureData = new Float32Array([
+        0, 1,   // 左上角——uv0
+        0, 0,   // 左下角——uv1
+        1, 1,   // 右上角——uv2
+        1, 0    // 右下角——uv3
+    ]);
+
+    webgl.vertexBuffer(data, a_Position, 2, gl.FLOAT);
+    webgl.vertexBuffer(textureData, a_TexCoord, 2, gl.FLOAT);
+
+    webgl.textureBuffer('texture.jpg', gl.RGB, function () {
+        gl.uniform1i(u_Sampler, 0); // 纹理缓冲区单元TEXTURE0中的颜色数据传入片元着色器
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    });
+</script>
+
+</body>
+</html>

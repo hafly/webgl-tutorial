@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>深度测试与α融合</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color: #000"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  attribute vec4 a_color;
+  varying vec4 v_color;
+  void main() {
+    // 设置几何体轴旋转角度为45度，并把角度值转化为弧度值
+    float radian = radians(45.0);
+    float cos = cos(radian);
+    float sin = sin(radian);
+
+    mat4 mx = mat4(1,0,0,0,  0,cos,-sin,0,  0,sin,cos,0,  0,0,0,1);
+    mat4 my = mat4(cos,0,-sin,0,  0,1,0,0,  sin,0,cos,0,  0,0,0,1);
+    // 两个旋转矩阵、顶点齐次坐标连乘
+    gl_Position = mx*my*apos;
+    // 顶点颜色插值计算
+    v_color = a_color;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision lowp float;
+  varying vec4 v_color;
+  void main() {
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    var a_color = gl.getAttribLocation(program, 'a_color');
+
+    var data = new Float32Array([
+        // 立方体1
+        .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5, .5,      //面1
+        .5, .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5,      //面2
+        .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5,      //面3
+        -.5, .5, .5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, -.5, -.5, -.5, .5,//面4
+        -.5, -.5, -.5, .5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, .5,//面5
+        .5, -.5, -.5, -.5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5,//面6
+        // 立方体2
+        .2, .2, .2, -.2, .2, .2, -.2, -.2, .2, .2, .2, .2, -.2, -.2, .2, .2, -.2, .2,      //面1
+        .2, .2, .2, .2, -.2, .2, .2, -.2, -.2, .2, .2, .2, .2, -.2, -.2, .2, .2, -.2,      //面2
+        .2, .2, .2, .2, .2, -.2, -.2, .2, -.2, .2, .2, .2, -.2, .2, -.2, -.2, .2, .2,      //面2
+        -.2, .2, .2, -.2, .2, -.2, -.2, -.2, -.2, -.2, .2, .2, -.2, -.2, -.2, -.2, -.2, .2,//面4
+        -.2, -.2, -.2, .2, -.2, -.2, .2, -.2, .2, -.2, -.2, -.2, .2, -.2, .2, -.2, -.2, .2,//面2
+        .2, -.2, -.2, -.2, -.2, -.2, -.2, .2, -.2, .2, -.2, -.2, -.2, .2, -.2, .2, .2, -.2 //面6
+    ]);
+
+    var colorData = new Float32Array([
+        // 立方体1，透明度0.6
+        1, 0, 0, 0.6, 1, 0, 0, 0.6, 1, 0, 0, 0.6, 1, 0, 0, 0.6, 1, 0, 0, 0.6, 1, 0, 0, 0.6,//红色——面1
+        0, 1, 0, 0.6, 0, 1, 0, 0.6, 0, 1, 0, 0.6, 0, 1, 0, 0.6, 0, 1, 0, 0.6, 0, 1, 0, 0.6,//绿色——面2
+        0, 0, 1, 0.6, 0, 0, 1, 0.6, 0, 0, 1, 0.6, 0, 0, 1, 0.6, 0, 0, 1, 0.6, 0, 0, 1, 0.6,//蓝色——面3
+
+        1, 1, 0, 0.6, 1, 1, 0, 0.6, 1, 1, 0, 0.6, 1, 1, 0, 0.6, 1, 1, 0, 0.6, 1, 1, 0, 0.6,//黄色——面4
+        0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6,//黑色——面5
+        1, 1, 1, 0.6, 1, 1, 1, 0.6, 1, 1, 1, 0.6, 1, 1, 1, 0.6, 1, 1, 1, 0.6, 1, 1, 1, 0.6,//白色——面6
+        // 立方体2，不透明，A分量为1
+        1, 0, 0, 1.0, 1, 0, 0, 1.0, 1, 0, 0, 1.0, 1, 0, 0, 1.0, 1, 0, 0, 1.0, 1, 0, 0, 1.0,//红色——面1
+        0, 1, 0, 1.0, 0, 1, 0, 1.0, 0, 1, 0, 1.0, 0, 1, 0, 1.0, 0, 1, 0, 1.0, 0, 1, 0, 1.0,//绿色——面2
+        0, 0, 1, 1.0, 0, 0, 1, 1.0, 0, 0, 1, 1.0, 0, 0, 1, 1.0, 0, 0, 1, 1.0, 0, 0, 1, 1.0,//蓝色——面3
+
+        1, 1, 0, 1.0, 1, 1, 0, 1.0, 1, 1, 0, 1.0, 1, 1, 0, 1.0, 1, 1, 0, 1.0, 1, 1, 0, 1.0,//黄色——面4
+        0, 0, 0, 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0,//黑色——面5
+        1, 1, 1, 1.0, 1, 1, 1, 1.0, 1, 1, 1, 1.0, 1, 1, 1, 1.0, 1, 1, 1, 1.0, 1, 1, 1, 1.0 //白色——面6
+    ]);
+
+    webgl.vertexBuffer(data, aposLocation, 3, gl.FLOAT);
+    webgl.vertexBuffer(colorData, a_color, 4, gl.FLOAT);
+
+    /** 开启深度测试并设置颜色融合单元 **/
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    gl.drawArrays(gl.TRIANGLES, 36, 36);    // 先绘制不透明的立方体（里面的）
+    gl.drawArrays(gl.TRIANGLES, 0, 36);     // 后绘制透明的立方体
+</script>
+
+</body>
+</html>

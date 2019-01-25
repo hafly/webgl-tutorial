@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>0.切换着色器</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color:#0d72da"></canvas>
+
+<script id="vertexShader1" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  void main() {
+    gl_Position = apos;
+  }
+</script>
+
+<script id="fragmentShader1" type="x-shader/x-fragment">
+  void main() {
+    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+  }
+</script>
+
+<script id="vertexShader2" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  void main() {
+    gl_Position = apos;
+  }
+</script>
+
+<script id="fragmentShader2" type="x-shader/x-fragment">
+  void main() {
+    gl_FragColor = vec4(0.0,1.0,0.0,1.0);
+  }
+</script>
+
+<script>
+    // 切换着色器比较耗资源，尽量少做切换
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource1 = document.getElementById('vertexShader1').innerText;
+    var fragShaderSource1 = document.getElementById('fragmentShader1').innerText;
+
+    var vertexShaderSource2 = document.getElementById('vertexShader2').innerText;
+    var fragShaderSource2 = document.getElementById('fragmentShader2').innerText;
+
+    var program1 = webgl.initShader(vertexShaderSource1, fragShaderSource1);
+    var program2 = webgl.initShader(vertexShaderSource2, fragShaderSource2);
+
+    var aposLocation1 = gl.getAttribLocation(program1, 'apos');
+    var aposLocation2 = gl.getAttribLocation(program2, 'apos');
+
+    var data = new Float32Array([0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5]);
+
+    webgl.vertexBuffer(data, aposLocation1, 2, gl.FLOAT);
+    gl.useProgram(program1);
+
+    gl.drawArrays(gl.LINE_LOOP, 0, 4);
+
+    var data2 = new Float32Array([0.3, 0.3, -0.3, 0.3, -0.3, -0.3, 0.3, -0.3]);
+
+    webgl.vertexBuffer(data2, aposLocation2, 2, gl.FLOAT);
+    gl.useProgram(program2);
+
+    gl.drawArrays(gl.LINE_LOOP, 0, 4);
+</script>
+
+</body>
+</html>

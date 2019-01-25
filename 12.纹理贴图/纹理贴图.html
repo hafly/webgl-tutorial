@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>纹理贴图</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+<canvas id="webgl" width="500" height="500" style="background-color:#aaaaaa"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 a_Position;// 顶点位置坐标
+  attribute vec2 a_TexCoord;// 纹理坐标
+  varying vec2 v_TexCoord;  // 插值后纹理坐标
+  void main() {
+    gl_Position = a_Position;
+    // 纹理坐标插值计算
+    v_TexCoord = a_TexCoord;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision highp float;
+  // 接收插值后的纹理坐标
+  varying vec2 v_TexCoord;
+  // 纹理图片像素数据
+  uniform sampler2D u_Sampler;
+  void main() {
+    // 采集纹素，逐片元赋值像素值
+    gl_FragColor = texture2D(u_Sampler,v_TexCoord);
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var a_Position = gl.getAttribLocation(program, 'a_Position');
+    var a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
+    var u_Sampler = gl.getUniformLocation(program, 'u_Sampler');
+
+    // 顶点坐标
+    var data = new Float32Array([
+        -0.5, 0.5,  // 左上角——v0
+        -0.5, -0.5, // 左下角——v1
+        0.5, 0.5,   // 右上角——v2
+        0.5, -0.5   // 右下角——v3
+    ]);
+
+    // 创建UV纹理坐标数据textureData
+    var textureData = new Float32Array([
+        0, 1,   // 左上角——uv0
+        0, 0,   // 左下角——uv1
+        1, 1,   // 右上角——uv2
+        1, 0    // 右下角——uv3
+    ]);
+
+    // 加载纹理图像像素数据
+    var image = new Image();
+    image.src = 'texture.jpg';
+    image.onload = texture;
+
+    webgl.vertexBuffer(data, a_Position, 2, gl.FLOAT);
+    webgl.vertexBuffer(textureData, a_TexCoord, 2, gl.FLOAT);
+
+    // 创建缓冲区textureBuffer，传入图片纹理数据，然后执行绘制方法drawArrays()
+    function texture() {
+        var texture = gl.createTexture();               // 创建纹理图像缓冲区
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);   // 纹理图片上下反转
+        gl.activeTexture(gl.TEXTURE0);                  // 激活0号纹理单元TEXTURE0
+        gl.bindTexture(gl.TEXTURE_2D, texture);         // 绑定纹理缓冲区
+
+        // 设置纹理贴图填充方式(纹理贴图像素尺寸大于顶点绘制区域像素尺寸)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        // 设置纹理贴图填充方式(纹理贴图像素尺寸小于顶点绘制区域像素尺寸)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        // 设置纹素格式，jpg格式对应gl.RGB
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+
+        // 纹理缓冲区单元TEXTURE0中的颜色数据传入片元着色器
+        gl.uniform1i(u_Sampler, 0);
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+</script>
+
+</body>
+</html>

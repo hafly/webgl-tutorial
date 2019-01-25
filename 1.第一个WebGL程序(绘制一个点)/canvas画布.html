@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas画布</title>
+</head>
+<body>
+
+<canvas id="canvas" width="800px" height="600px" style="background: #ddeeff"></canvas>
+
+<script>
+    let canvas = document.getElementById('canvas');
+    c = canvas.getContext('2d');
+
+    c.translate(400, 300);      // 把坐标原点平移到canvas画布的中心点
+    c.strokeStyle = "#158539";  // 设置边线颜色
+
+    // 求解正六边形6个点的纵横坐标
+    let x = [];  // 横坐标数组
+    let y = [];  // 纵坐标数组
+    let r = 200; // 正六边形外接圆半径
+
+    // 循环计算六个点的坐标
+    for (let i = 0; i < 6; i++) {
+        x[i] = r * Math.cos(2 * Math.PI / 6 * i); // 计算横坐标，并存入x数组[]
+        y[i] = r * Math.sin(2 * Math.PI / 6 * i); // 计算纵坐标，并存入y数组[]
+    }
+
+    // 定义初始点，调用数组里的数据定义点的位置
+    c.moveTo(x[0], y[0]);
+    // 利用for循环定义第2~6个点
+    for (let i = 1; i < 6; i++) {
+        c.lineTo(x[i], y[i]);
+    }
+    c.closePath();  // 设置轮廓闭合，最后一个点与第一个点连线
+    c.stroke();     // 开始绘制线条轮廓
+</script>
+
+</body>
+
+</html>

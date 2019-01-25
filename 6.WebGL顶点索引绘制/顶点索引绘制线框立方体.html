@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>顶点索引绘制线框立方体</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+<canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  void main() {
+    // 设置几何体轴旋转角度为30度，并把角度值转化为弧度值
+    float radian = radians(30.0);
+    // 求解旋转角度余弦值
+    float cos = cos(radian);
+    // 求解旋转角度正弦值
+    float sin = sin(radian);
+    // 引用上面的计算数据，创建绕x轴旋转矩阵
+    // 1      0       0    0
+    // 0   cosα   sinα   0
+    // 0  -sinα   cosα   0
+    // 0      0        0   1
+    mat4 mx = mat4(1,0,0,0,  0,cos,-sin,0,  0,sin,cos,0,  0,0,0,1);
+    // 引用上面的计算数据，创建绕y轴旋转矩阵
+    //  cosβ   0   sinβ    0
+    //      0   1   0        0
+    // -sinβ   0   cosβ    0
+    //      0   0   0        1
+    mat4 my = mat4(cos,0,-sin,0,  0,1,0,0,  sin,0,cos,0,  0,0,0,1);
+    // 两个旋转矩阵、顶点齐次坐标连乘
+    gl_Position = mx*my*apos;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  void main() {
+    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+
+    // 8个顶点坐标数组
+    var data = new Float32Array([
+        0.5, 0.5, 0.5,      //顶点0
+        -0.5, 0.5, 0.5,     //顶点1
+        -0.5, -0.5, 0.5,    //顶点2
+        0.5, -0.5, 0.5,     //顶点3
+        0.5, 0.5, -0.5,     //顶点4
+        -0.5, 0.5, -0.5,    //顶点5
+        -0.5, -0.5, -0.5,   //顶点6
+        0.5, -0.5, -0.5,    //顶点7
+    ]);
+    // 顶点索引数组
+    var indexes = new Uint8Array([
+        // 前四个点
+        0, 1, 2, 3,
+        // 后四个顶点
+        4, 5, 6, 7,
+        // 前后对应点
+        0, 4,
+        1, 5,
+        2, 6,
+        3, 7
+    ]);
+
+    webgl.vertexBuffer(data, aposLocation, 3, gl.FLOAT);
+
+    var indexesBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexesBuffer);
+    // 索引数组indexes数据传入缓冲区
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexes, gl.STATIC_DRAW);
+
+    gl.drawElements(gl.LINE_LOOP, 4, gl.UNSIGNED_BYTE, 0);  // LINE_LOOP模式绘制前四个点
+    gl.drawElements(gl.LINE_LOOP, 4, gl.UNSIGNED_BYTE, 4);  // LINE_LOOP模式从第五个点开始绘制四个点
+    gl.drawElements(gl.LINES, 8, gl.UNSIGNED_BYTE, 8);      // LINES模式绘制后8个点
+</script>
+
+</body>
+</html>

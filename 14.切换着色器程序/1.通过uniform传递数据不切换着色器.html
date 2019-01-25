@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>1.通过uniform传递数据不切换着色器</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color:#0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  void main() {
+    gl_Position = apos;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision lowp float;
+  uniform vec4 u_Color;
+  void main() {
+    gl_FragColor = u_Color;
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var a_Position = gl.getAttribLocation(program, 'apos');
+    var u_Color = gl.getUniformLocation(program, 'u_Color');
+
+    var data = new Float32Array([
+        0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5,
+        0.3, 0.3, -0.3, 0.3, -0.3, -0.3, 0.3, -0.3
+    ]);
+
+    webgl.vertexBuffer(data, a_Position, 2, gl.FLOAT);
+
+    gl.uniform4f(u_Color, 1.0, 0.0, 0.0, 1.0);  // 将点的颜色传递到变量
+    gl.drawArrays(gl.LINE_LOOP, 0, 4);
+
+    gl.uniform4f(u_Color, 0.0, 0.0, 1.0, 1.0);
+    gl.drawArrays(gl.LINE_LOOP, 4, 4);
+</script>
+
+</body>
+</html>
