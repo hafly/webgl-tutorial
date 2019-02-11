@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>WebGL综合运用1</title>
     <script src="../js/webgl.js"></script>
+    <script src="../js/three.js"></script>
 </head>
 <body>
 <canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
@@ -77,8 +78,8 @@
     var my = gl.getUniformLocation(program, 'my');
 
     var color = new Color(1, 1, 1);     // 光照颜色
-    var pos = new Vector3(0, 5, -10);   // 平行光方向（TODO 这里的z为什么是反的）
-    var normalize = pos.negate().normalize();    // 标准化向量
+    var pos = new Vector3(0, -5, 10);    // 平行光方向（TODO 这里的z为什么是反的）
+    var normalize = pos.normalize();    // 标准化向量
 
     gl.uniform3f(u_lightColor, color.r, color.g, color.b);
     gl.uniform3f(u_lightDirection, normalize.x, normalize.y, normalize.z);
@@ -117,7 +118,7 @@
     /* 当前 矩阵变换 计算是在CPU中，GPU中计算参考 第9课：立方体添加点光源 */
 
     // 绕x轴旋转45度（matrix4的旋转不会同时进行，一次只能一个方向）
-    var angleX = -_Math.DEG2RAD * 30;
+    var angleX = _Math.DEG2RAD * 30;
     var matrix4 = new Matrix4();
     matrix4.rotationX(angleX);
 
@@ -136,6 +137,9 @@
     }
 
     draw();
+
+    var box=new BoxGeometry();
+    console.log(box)
 </script>
 
 </body>
