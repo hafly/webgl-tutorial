@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>1.设置gl_Position的x分量</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  void main() {
+    // 沿着x轴平移0.4
+    gl_Position =vec4(apos.x+0.4,apos.y,apos.z,1);
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  void main() {
+    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    var data = new Float32Array([
+        0, 0, 1,
+        0, 1, 0,
+        1, 0, 0
+    ]);
+
+    webgl.vertexBuffer(data, aposLocation, 3, gl.FLOAT);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>
+
+</body>
+</html>

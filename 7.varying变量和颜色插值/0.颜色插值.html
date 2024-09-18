@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>0.颜色插值</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+<canvas id="webgl" width="500" height="500" style="background-color: #000"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  attribute vec4 a_color;
+  // varying声明顶点颜色插值后变量
+  varying vec4 v_color;
+  void main() {
+    gl_Position = apos;// 顶点坐标apos赋值给内置变量gl_Position
+    v_color = a_color; // 顶点颜色插值计算
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  // 所有float类型数据的精度是lowp
+  precision lowp float;
+  // 接收顶点着色器中v_color数据
+  varying vec4 v_color;
+  void main() {
+    // 插值后颜色数据赋值给对应的片元
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    var a_color = gl.getAttribLocation(program, 'a_color');
+
+    // 创建顶点位置数据数组data，存储两个顶点(-0.5,0.5)、(0.5,0.5)
+    var data = new Float32Array([-0.5, 0.5, 0.5, 0.5]);
+    // 创建顶点颜色数组colorData，存储两个顶点对应RGB颜色值(0,0,1)、(1,0,0)
+    var colorData = new Float32Array([0, 0, 1, 1, 0, 0]);
+
+    // 创建缓冲区buffer，传入顶点位置数据data
+    webgl.vertexBuffer(data, aposLocation, 2, gl.FLOAT);
+    // 创建缓冲区colorBuffer，传入顶点颜色数据colorData
+    webgl.vertexBuffer(colorData, a_color, 3, gl.FLOAT);
+
+    gl.drawArrays(gl.LINES, 0, 2);
+</script>
+
+</body>
+</html>

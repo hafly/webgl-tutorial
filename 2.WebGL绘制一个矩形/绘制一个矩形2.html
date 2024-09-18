@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>使用WebGL绘制一个点</title>
+    <script src="../js/webgl-utils.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color:#0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+    // attribute声明vec4类型变量apos
+    attribute vec4 apos;
+    void main() {
+        // 顶点坐标apos赋值给内置变量gl_Position
+        // 逐顶点处理数据
+        gl_Position = apos;
+    }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+    void main() {
+        // 逐片元处理数据，所有片元(像素)设置为红色
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+
+    var vertexShaderSource = document.getElementById('vertexShader').text;
+    var fragmentShaderSource = document.getElementById('fragmentShader').text;
+
+    // 初始化着色器
+    var program = WebGLUtils.initShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
+    gl.useProgram(program);
+
+    // 类型数组构造函数Float32Array创建顶点数组
+    var data = new Float32Array([
+        0.5, 0.5,
+        -0.5, 0.5,
+        -0.5, -0.5,
+        0.5, -0.5
+    ]);
+
+    // 属性值从缓冲中获取数据
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+
+    // 创建缓冲区对象
+    var positionBuffer = gl.createBuffer();
+
+    // WebGL可以通过绑定点操控全局范围内的许多数据，你可以把绑定点想象成一个WebGL内部的全局变量。
+    // 绑定位置信息缓冲（下面的绑定点就是ARRAY_BUFFER）
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+    // 通过绑定点向缓冲中存放数据
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+    // 缓冲中获取数据给着色器中的属性
+    gl.enableVertexAttribArray(aposLocation);
+
+    // 告诉属性怎么从positionBuffer中读取数据 (ARRAY_BUFFER)
+    var size = 2;          // 每次迭代运行提取两个单位数据
+    var type = gl.FLOAT;   // 每个单位的数据类型是32位浮点型
+    var normalize = false; // 不需要归一化数据
+    var stride = 0;        // 0 = 移动单位数量 * 每个单位占用内存（sizeof(type)），每次迭代运行运动多少内存到下一个数据开始点
+    var offset = 0;        // 从缓冲起始位置开始读取
+    gl.vertexAttribPointer(aposLocation, size, type, normalize, stride, offset);
+
+    // 开始绘制图形
+    var primitiveType = gl.LINE_LOOP; // 闭合线
+    var offset = 0; // 起始位置
+    var count = 4;  // 指定绘制需要使用到多少个点
+    gl.drawArrays(primitiveType, offset, count);
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebGL综合运用1</title>
+    <script src="../js/webgl.js"></script>
+    <script src="../js/three.js"></script>
+</head>
+<body>
+<canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  // attribute声明vec4类型变量
+  attribute vec4 a_pos;
+  attribute vec4 a_color;
+  attribute vec4 a_normal;
+
+  uniform vec3 u_lightColor;    // 平行光颜色变量
+  uniform vec3 u_lightDirection;// 平行光方向
+
+  varying vec4 v_color;
+
+  // uniform声明旋转矩阵变量mx、my
+  uniform mat4 mx;  // 绕x轴旋转矩阵
+  uniform mat4 my;  // 绕y轴旋转矩阵
+
+  void main() {
+    mat4 m4 = mx * my;  // 声明临时变量ms
+
+    // 两个旋转矩阵、顶点齐次坐标连乘，赋值给内置变量gl_Position（attribute vec4类型）
+    gl_Position = m4 * a_pos;
+
+    // 顶点法向量进行矩阵变换，然后归一化
+    vec3 normal = normalize((m4 * a_normal).xyz);
+
+    // 计算平行光方向向量和顶点法向量的点积（方向完全相同为1，完全相反为-1，垂直为0）
+    float u_dot = max(-dot(u_lightDirection, normal), 0.0);
+
+    // 计算反射后的颜色（颜色相乘，dot越大值越大）
+    vec3 reflectedLight = u_lightColor * a_color.rgb * u_dot;
+
+    // 颜色插值计算（补上其次坐标a，a默认为1，否则整个光照都透明了）
+    v_color = vec4(reflectedLight, a_color.a);
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision lowp float; // 所有float类型数据的精度是lowp（varying类型必须定义精度）
+  varying vec4 v_color; // 接收顶点着色器中v_color数据
+  void main() {
+    gl_FragColor = v_color; // 插值后颜色数据赋值给对应的片元
+  }
+</script>
+
+<script>
+    /*
+     * 变量类型：attribute:顶点数据；varying 插值相关变量；uniform：传递光照、模型变换矩阵等信息
+     * 数据类型：vec3,vec4：attribute vec4 a_pos；mat4:4x4矩阵
+     */
+
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var a_pos = gl.getAttribLocation(program, 'a_pos');
+    var a_color = gl.getAttribLocation(program, 'a_color');
+    var a_normal = gl.getAttribLocation(program, 'a_normal');
+
+    var u_lightColor = gl.getUniformLocation(program, 'u_lightColor');
+    var u_lightDirection = gl.getUniformLocation(program, 'u_lightDirection');
+
+    // 从program对象获得旋转矩阵变量mx、my地址
+    var mx = gl.getUniformLocation(program, 'mx');
+    var my = gl.getUniformLocation(program, 'my');
+
+    var color = new Color(1, 1, 1);     // 光照颜色
+    var pos = new Vector3(0, -5, 10);    // 平行光方向（TODO 这里的z为什么是反的）
+    var normalize = pos.normalize();    // 标准化向量
+
+    gl.uniform3f(u_lightColor, color.r, color.g, color.b);
+    gl.uniform3f(u_lightDirection, normalize.x, normalize.y, normalize.z);
+
+    var data = new Float32Array([
+        .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5, .5,       // 面1（front）
+        .5, .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5,       // 面2（right）
+        .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5,       // 面3（up）
+        -.5, .5, .5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, -.5, -.5, -.5, .5, // 面4（left）
+        -.5, -.5, -.5, .5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, .5, // 面5（down）
+        .5, -.5, -.5, -.5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5  // 面6（back）
+    ]);
+    var colorData = new Float32Array([
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0
+    ]);
+    var normalData = new Float32Array([
+        0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,       // z轴正方向——面1
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,       // x轴正方向——面2
+        0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,       // y轴正方向——面3
+        -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, // x轴负方向——面4
+        0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, // y轴负方向——面5
+        0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1  // z轴负方向——面6
+    ]);
+
+    webgl.vertexBuffer(data, a_pos, 3, gl.FLOAT);
+    webgl.vertexBuffer(colorData, a_color, 3, gl.FLOAT);
+    webgl.vertexBuffer(normalData, a_normal, 3, gl.FLOAT);
+
+    gl.enable(gl.DEPTH_TEST);
+
+    /* 当前 矩阵变换 计算是在CPU中，GPU中计算参考 第9课：立方体添加点光源 */
+
+    // 绕x轴旋转45度（matrix4的旋转不会同时进行，一次只能一个方向）
+    var angleX = _Math.DEG2RAD * 30;
+    var matrix4 = new Matrix4();
+    matrix4.rotationX(angleX);
+
+    // 把数据mxArr传递给着色器旋转矩阵变量mx
+    gl.uniformMatrix4fv(mx, false, matrix4.elements);
+
+    var angleY = _Math.DEG2RAD * 45;// 起始角度30度
+    function draw() {
+        requestAnimationFrame(draw);
+
+        // 立方体绕y轴旋转
+        angleY += 0.01;
+        matrix4.rotationY(angleY);
+        gl.uniformMatrix4fv(my, false, matrix4.elements);
+        gl.drawArrays(gl.TRIANGLES, 0, 36);
+    }
+
+    draw();
+
+    var box=new BoxGeometry();
+    console.log(box)
+</script>
+
+</body>
+</html>

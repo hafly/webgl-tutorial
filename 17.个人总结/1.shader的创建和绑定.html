@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="renderer" content="webkit">
+    <title>1.shader的创建和绑定</title>
+</head>
+<body>
+<canvas id="myCanvas" width="500" height="500" style="background-color:#0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  // attribute声明vec4类型变量apos
+  attribute vec4 a_Position;
+  void main() {
+    // 顶点坐标apos赋值给内置变量gl_Position
+    // 逐顶点处理数据
+    gl_Position = a_Position;
+  }
+
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  void main() {
+    // 逐片元处理数据，所有片元(像素)设置为红色
+    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+  }
+
+</script>
+<script>
+    /*
+    * 1.attribute
+    *   只能在vertex shader中使用的变量，一般用于传递顶点数据
+    * 2.uniform
+    *   常量，不能被shader修改。uniform变量在vertex和fragment两者之间声明方式完全一样，则它可以在vertex和fragment共享使用。
+    * 3.varying
+    *   varying变量是vertex和fragment shader之间做数据传递用的
+    */
+    var canvas = document.getElementById('myCanvas');
+    var gl = canvas.getContext('webgl');
+
+    // create program（程序用于绑定顶点着色器和片元着色器，可以有多个program）
+    var program = gl.createProgram();
+
+    // var vertexShader = creteShader(gl, document.getElementById('vertexShader'), gl.VERTEX_SHADER);
+    // var fragmentShader = creteShader(gl, document.getElementById('fragmentShader', gl.FRAGMENT_SHADER))
+
+    // attach shader to program
+    // gl.attachShader(program, vertexShader);
+    // gl.attachShader(program, fragmentShader);
+
+    // link program to context
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    // create shader
+    function creteShader(gl, sourceCode, type) {
+        var shader = gl.createShader(type);
+        gl.sourceCode(shader, sourceCode);
+        gl.compileShader(shader);
+        return shader;
+    }
+
+    function initVertexBuffer() {
+
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>0.红色立方体</title>
+    <script src="../../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  attribute vec4 a_color;
+  varying vec4 v_color;
+  void main() {
+    float radian = radians(30.0);
+    float cos = cos(radian);
+    float sin = sin(radian);
+    // 引用上面的计算数据，创建绕x轴旋转矩阵
+    // 1      0       0    0
+    // 0   cosα   sinα   0
+    // 0  -sinα   cosα   0
+    // 0      0        0   1
+    mat4 mx = mat4(1,0,0,0,  0,cos,-sin,0,  0,sin,cos,0,  0,0,0,1);
+    // 引用上面的计算数据，创建绕y轴旋转矩阵
+    // cosβ   0   sinβ    0
+    //     0   1   0        0
+    //-sinβ   0   cosβ    0
+    //     0   0   0        1
+    mat4 my = mat4(cos,0,-sin,0,  0,1,0,0,  sin,0,cos,0,  0,0,0,1);
+    // 两个旋转矩阵、顶点齐次坐标连乘
+    gl_Position = mx*my*apos;
+    // 顶点颜色插值计算
+    v_color = a_color;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision lowp float;
+  varying vec4 v_color;
+  void main() {
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    var a_color = gl.getAttribLocation(program, 'a_color');
+
+    var data = new Float32Array([
+        .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5, .5,       // 面1
+        .5, .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5,       // 面2
+        .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5,       // 面3
+        -.5, .5, .5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, -.5, -.5, -.5, .5, // 面4
+        -.5, -.5, -.5, .5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, .5, // 面5
+        .5, -.5, -.5, -.5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5  // 面6
+    ]);
+
+    var colorData = new Float32Array([
+        1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0,   // 红色——面1
+        1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0,   // 红色——面2
+        1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0,   // 红色——面3
+        1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0,   // 红色——面4
+        1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0,   // 红色——面5
+        1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0,   // 红色——面6
+    ]);
+
+    webgl.vertexBuffer(data, aposLocation, 3, gl.FLOAT);
+    webgl.vertexBuffer(colorData, a_color, 3, gl.FLOAT);
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.drawArrays(gl.TRIANGLES, 0, 36);
+</script>
+
+</body>
+</html>

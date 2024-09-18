@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>立方体旋转动画</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+<canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  attribute vec4 a_color;
+  attribute vec4 a_normal;
+
+  uniform vec3 u_lightColor;
+  uniform vec3 u_lightDirection;
+  varying vec4 v_color;
+
+  // uniform声明旋转矩阵变量mx、my
+  uniform mat4 mx;// 绕x轴旋转矩阵
+  uniform mat4 my;// 绕y轴旋转矩阵
+  void main() {
+    // 两个旋转矩阵、顶点齐次坐标连乘
+    gl_Position = mx*my*apos;
+    // 顶点法向量进行矩阵变换，然后归一化
+    vec3 normal = normalize((mx*my*a_normal).xyz);
+    // 计算平行光方向向量和顶点法向量的点积
+    float dot = max(dot(u_lightDirection, normal), 0.0);
+    // 计算反射后的颜色
+    vec3 reflectedLight = u_lightColor * a_color.rgb * dot;
+    // 颜色插值计算
+    v_color = vec4(reflectedLight, a_color.a);
+  }
+
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision lowp float;
+  varying vec4 v_color;
+  void main() {
+    gl_FragColor = v_color;
+  }
+
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    var a_color = gl.getAttribLocation(program, 'a_color');
+    var a_normal = gl.getAttribLocation(program, 'a_normal');
+    var u_lightColor = gl.getUniformLocation(program, 'u_lightColor');
+    var u_lightDirection = gl.getUniformLocation(program, 'u_lightDirection');
+
+    // 从program对象获得旋转矩阵变量mx、my地址
+    var mx = gl.getUniformLocation(program, 'mx');
+    var my = gl.getUniformLocation(program, 'my');
+
+    gl.uniform3f(u_lightColor, 1.0, 1.0, 1.0);
+    var x = 1 / Math.sqrt(15), y = 2 / Math.sqrt(15), z = 3 / Math.sqrt(15);
+    gl.uniform3f(u_lightDirection, x, y, -z);
+
+    var data = new Float32Array([
+        .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5, .5,
+        .5, .5, .5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, -.5, -.5, .5, .5, -.5,
+        .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5,
+        -.5, .5, .5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, -.5, -.5, -.5, .5,
+        -.5, -.5, -.5, .5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, .5,
+        .5, -.5, -.5, -.5, -.5, -.5, -.5, .5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5
+    ]);
+    var colorData = new Float32Array([
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0
+    ]);
+    var normalData = new Float32Array([
+        0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+        -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,
+        0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0,
+        0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1
+    ]);
+
+    webgl.vertexBuffer(data, aposLocation, 3, gl.FLOAT);
+    webgl.vertexBuffer(colorData, a_color, 3, gl.FLOAT);
+    webgl.vertexBuffer(normalData, a_normal, 3, gl.FLOAT);
+
+    gl.enable(gl.DEPTH_TEST);
+
+    // 绕x轴旋转45度
+    var angelX = Math.PI / 180 * 45;
+    var mxArr = new Float32Array([
+        1, 0, 0, 0,
+        0, Math.cos(angelX), -Math.sin(angelX), 0,
+        0, Math.sin(angelX),  Math.cos(angelX), 0,
+        0, 0, 0, 1
+    ]);
+
+    // webgl教程：https://developer.mozilla.org/zh-CN/docs/Web/API/WebGL_API/Tutorial
+    // api文档：https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/uniformMatrix
+    // 把数据mxArr传递给着色器旋转矩阵变量mx
+    gl.uniformMatrix4fv(mx, false, mxArr);
+
+    var angle = Math.PI / 180 * 30;// 起始角度30度
+    function draw() {
+        requestAnimationFrame(draw);
+        // gl.clear(gl.COLOR_BUFFER_BIT);//清空画布上一帧图像
+
+        // 立方体绕y轴旋转
+        angle += 0.01;
+        var sin = Math.sin(angle);
+        var cos = Math.cos(angle);
+        var myArr = new Float32Array([cos, 0, -sin, 0, 0, 1, 0, 0, sin, 0, cos, 0, 0, 0, 0, 1]);
+        gl.uniformMatrix4fv(my, false, myArr);
+        gl.drawArrays(gl.TRIANGLES, 0, 36);
+    }
+
+    draw();
+</script>
+
+</body>
+</html>

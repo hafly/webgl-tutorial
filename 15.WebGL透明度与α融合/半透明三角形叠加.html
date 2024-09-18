@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>半透明三角形叠加</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color: #fff"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 apos;
+  attribute vec4 a_color;
+  varying vec4 v_color;
+  void main() {
+    gl_Position = apos;
+    v_color = a_color;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision lowp float;
+  varying vec4 v_color;
+  void main() {
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script>
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    var a_color = gl.getAttribLocation(program, 'a_color');
+
+    /**
+     创建顶点位置数据数组data，存储6个顶点
+     创建顶点颜色数组colorData，存储6个顶点对应RGB颜色值
+     **/
+    var data = new Float32Array([
+        -0.5, 0.5, 0.5, 0.5, 0.5, -0.5,  // 红色三角形的三个顶点（顺序1）
+        -0.7, 0.3, 0.3, 0.3, 0.3, -0.7,  // 绿色三角形的三个顶点（顺序2）
+        -0.3, 0.7, 0.7, 0.7, 0.7, -0.3   // 蓝色三角形的三个顶点（顺序3）
+    ]);
+    var colorData = new Float32Array([
+        // 红色顶点，透明度0.7
+        1, 0, 0, 0.7,
+        1, 0, 0, 0.7,
+        1, 0, 0, 0.7,
+        // 绿色顶点，透明度0.7
+        0, 1, 0, 0.7,
+        0, 1, 0, 0.7,
+        0, 1, 0, 0.7,
+        // 蓝色顶点，透明度0.7
+        0, 0, 1, 0.7,
+        0, 0, 1, 0.7,
+        0, 0, 1, 0.7
+    ]);
+
+    webgl.vertexBuffer(data, aposLocation, 2, gl.FLOAT);
+    webgl.vertexBuffer(colorData, a_color, 4, gl.FLOAT);
+
+    // 渲染管线α融合功能单元配置
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 9);
+</script>
+
+</body>
+</html>

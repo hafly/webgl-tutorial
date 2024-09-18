@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>坐标系和投影</title>
+    <script src="../js/webgl.js"></script>
+</head>
+<body>
+
+<canvas id="webgl" width="500" height="500" style="background-color: #0d72da"></canvas>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  // attribute声明vec4类型变量apos
+  attribute vec4 apos;
+  void main() {
+    // 顶点坐标apos赋值给内置变量gl_Position
+    // 逐顶点处理数据
+    gl_Position = apos;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  void main() {
+    // 逐片元处理数据，所有片元(像素)设置为红色
+    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+  }
+</script>
+
+<script>
+    // webgl边界为1，超过被剪裁；webgl默认投影方向为z轴
+    var gl = document.getElementById('webgl').getContext('webgl');
+    var webgl = new WebGL(gl);
+
+    var vertexShaderSource = document.getElementById('vertexShader').innerText;
+    var fragShaderSource = document.getElementById('fragmentShader').innerText;
+
+    var program = webgl.initShader(vertexShaderSource, fragShaderSource);
+
+    var aposLocation = gl.getAttribLocation(program, 'apos');
+    // 9个元素构建三个顶点的xyz坐标值
+    var data = new Float32Array([
+        0, 0, 1.2,
+        0, 1, 0,
+        1, 0, 0
+    ]);
+
+    // 创建缓冲区对象
+    webgl.vertexBuffer(data, aposLocation, 3, gl.FLOAT);
+
+    // 开始绘制图形，使用TRIANGLES模式，三点构成一个平面
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>
+
+</body>
+</html>
